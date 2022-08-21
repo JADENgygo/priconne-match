@@ -10,15 +10,18 @@ import { order, tags } from "../lib/tag";
 import { getApp } from 'firebase/app';
 import { getAuth } from "firebase/auth";
 import { getAuth as getAdminAuth } from "firebase-admin/auth";
-import { collection, getFirestore, doc, setDoc, getDocs, query, orderBy, limit, startAfter, DocumentData, QueryDocumentSnapshot } from "firebase/firestore";
+import { collection, getFirestore, doc, setDoc, deleteDoc, getDoc, getDocs, query, orderBy, limit, startAfter, DocumentData, QueryDocumentSnapshot } from "firebase/firestore";
 import { initFirebaseAdminApp } from "../lib/firebase-admin";
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 import { useRouter } from "next/router";
+import { Loader } from "../components/loader";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
 const Register: NextPage = () => {
+  const [loaded, setLoaded] = useState(false);
+  const [deletable, setDeletable] = useState(false);
   const [tag, setTag] = useState(
     Object.fromEntries(
       Object.keys({...order}).map((e, i) => [
@@ -54,24 +57,29 @@ const Register: NextPage = () => {
   const router = useRouter();
 
   useEffect(() => {
-    // const app = getApp();
-    // const db = getFirestore(app);
-    // const col = collection(db, "clans");
-    // let q;
-    // const size = 5;
-    // if (state.last === null) {
-    //   q = query(col, orderBy("updated_at", "desc"), limit(size))
-    // }
-    // else {
-    //   q = query(col, orderBy("updated_at", "desc"), startAfter(state.last), limit(size))
-    // }
-    // const snapshot = await getDocs(q);
-    // if (snapshot.size === 0) {
-    //   return;
-    // }
-    // const list = snapshot.docs.map(e => e.data());
-    // setState({last: snapshot.docs[snapshot.size - 1], list: state.list.concat(list)});
-  });
+    const f = async () => {
+      const auth = getAuth();
+      if (!auth.currentUser) {
+        return;
+      }
+      const app = getApp();
+      const db = getFirestore(app);
+      const docRef = doc(db, "clans", auth.currentUser.uid);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        setInfo({name: data.name, description: data.description, twitter: data.screenName, private: data.closed});
+        setTag({...data.tag});
+        setImages(data.downloadUrls.map((e: string) => ({src: e, data: null})));
+        setDeletable(true);
+      }
+    };
+    f();
+  }, []);
+
+  if (loaded) {
+    return <Loader />
+  }
 
   const debug = () => {
     console.log(info, tag, images);
@@ -110,7 +118,6 @@ const Register: NextPage = () => {
 		});
 
 		if (!validated) {
-      event.target.value = "";
       setImages(pre => {
         pre[index].src = "";
         pre[index].data = null;
@@ -139,11 +146,14 @@ const Register: NextPage = () => {
       return;
     }
 
-    const urls = ["", "", "", ""];
+    setLoaded(true);
+
+    const urls = images.map(e => e.src);
     for (let i = 0; i < images.length; ++i) {
       const storage = getStorage();
       const reference = ref(storage, `${auth.currentUser.uid}/profile${i}.jpg`);
-      if (images[i].data === null) {
+      // dataがnullでsrcに正しい値が入っている場合がある (登録後の再修正の時)
+      if (images[i].src === "") {
         try {
           await deleteObject(reference);
         }
@@ -151,7 +161,7 @@ const Register: NextPage = () => {
           // ファイルがない場合 (なにもしない)
         }
       }
-      else {
+      else if (images[i].data !== null) {
         await uploadBytes(reference, images[i].data);
         const url = await getDownloadURL(reference);
         urls[i] = url;
@@ -188,6 +198,32 @@ const Register: NextPage = () => {
     image.value = "";
   };
 
+  const deleteClan = async () => {
+    const auth = getAuth();
+    if (!auth.currentUser) {
+      return;
+    }
+
+    setLoaded(true);
+
+    const app = getApp();
+    const db = getFirestore(app);
+    const docRef = doc(db, "clans", auth.currentUser.uid);
+    await deleteDoc(docRef);
+
+    for (let i = 0; i < images.length; ++i) {
+      const storage = getStorage();
+      const reference = ref(storage, `${auth.currentUser.uid}/profile${i}.jpg`);
+      try {
+        await deleteObject(reference);
+      }
+      catch (e) {
+        // ファイルがない場合 (なにもしない)
+      }
+    }
+    router.push("/");
+  };
+
   return (
     <div className="container mt-3">
       <label htmlFor="name" className="form-label">クラン名</label>
@@ -222,7 +258,12 @@ const Register: NextPage = () => {
           <div className="col-6 col-sm-4 col-md-3 col-lg-2 text-center" key={i}>
             <div className="mb-3">{ i + 1 }枚目</div>
             <img src={e.src} className="img-fluid mb-3" />
-            <input accept=".jpg,.jpeg" id={"image" + i} className="form-control form-control-sm mb-3" type="file" onChange={(event) => selectImage(event, i)} />
+            <div>
+              <label className="btn btn-primary mb-3">
+                画像の選択
+                <input accept=".jpg,.jpeg" id={"image" + i} style={{display: "none"}} className="mb-3" type="file" onChange={(event) => selectImage(event, i)} />
+              </label>
+            </div>
             <button className="btn btn-primary" onClick={() => removeImage(i)}>選択の解除</button>
           </div>
         ))
@@ -244,7 +285,7 @@ const Register: NextPage = () => {
           <button className="btn btn-primary" onClick={register}>登録</button>
         </div>
         <div className="col-6 text-end">
-          <button className="btn btn-danger text-right" onClick={() => console.log('todo')}>削除</button>
+          { deletable && <button className="btn btn-danger text-right" onClick={deleteClan}>削除</button> }
         </div>
       </div>
 

@@ -3,7 +3,7 @@ import Image from 'next/image'
 import styles from '../styles/Home.module.css'
 import { getApp } from 'firebase/app';
 import { collection, getFirestore, doc, setDoc, getDocs, query, orderBy, limit, startAfter, DocumentData, QueryDocumentSnapshot } from "firebase/firestore";
-import React, { ComponentType, useEffect, useRef, useState } from 'react';
+import React, { ComponentType, useEffect, useReducer, useRef, useState } from 'react';
 import { getStorage, ref, getDownloadURL } from "firebase/storage";
 import dayjs from "dayjs";
 import timezone from 'dayjs/plugin/timezone';
@@ -12,11 +12,19 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { Loader } from "../components/loader";
 import { order } from "../lib/tag";
+import { Provider } from 'react-redux';
+import { store, setClans } from "../lib/redux";
+import { useDispatch } from 'react-redux';
+import { useSelector } from 'react-redux';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
+// todo noimageを実装
+
 const Home: NextPage = () => {
+  const dispatch = useDispatch();
+  const selector = useSelector((state: any) => state.clans);
   const router = useRouter();
   const [state, setState] = useState({
     last: (null as unknown) as QueryDocumentSnapshot<DocumentData>,
@@ -49,7 +57,12 @@ const Home: NextPage = () => {
   }, [search]);
 
   useEffect(() => {
-    search();
+    if (selector.list.length === 0) {
+      search();
+    }
+    else {
+      setState({last: selector.last, list: selector.list});
+    }
     const f = () => {
       if (document.documentElement.scrollHeight <= document.documentElement.clientHeight + document.documentElement.scrollTop) {
         callbackRef.current();
@@ -64,71 +77,53 @@ const Home: NextPage = () => {
     return <Loader />;
   }
 
-  const debug = async () => {
-    const app = getApp();
-    const db = getFirestore(app);
+  // const debug = async () => {
+  //   const app = getApp();
+  //   const db = getFirestore(app);
 
-    for (let i = 0; i < 100; ++i) {
-      const now = dayjs().tz("Asia/Tokyo"). format('YYYY-MM-DDTHH:mm:ss.SSS+09:00');
-      await setDoc(doc(db, "clans", "test" + i), {
-        closed: true,
-        created_at: now,
-        description: "description" + i,
-        downloadUrls: ["https://firebasestorage.googleapis.com/v0/b/princess-connect-clan-searcher.appspot.com/o/test%2Ftest0.jpg?alt=media&token=4153f5c1-b61e-4ea9-a82a-0240464b8070", null, null, null],
-        name: "test" + i,
-        screenName: "screenName" + i,
-        tag: {
-          'rank': "test",
-          'policy': "test",
-          'login': "test",
-          'chat': "test",
-          'tool': "test",
-          'battleCount': "test",
-          'auto': "test",
-          'equipmentRequest': "test",
-          'battleDeclaration': "test",
-          'level': "test",
-          'strength': "test",
-          'character': "test",
-        },
-        updated_at: now,
-        userId: "testid" + i
-      });
-    }
-    console.log("done")
-  };
+  //   for (let i = 0; i < 100; ++i) {
+  //     const now = dayjs().tz("Asia/Tokyo"). format('YYYY-MM-DDTHH:mm:ss.SSS+09:00');
+  //     await setDoc(doc(db, "clans", "test" + i), {
+  //       closed: true,
+  //       created_at: now,
+  //       description: "description" + i,
+  //       downloadUrls: ["https://firebasestorage.googleapis.com/v0/b/princess-connect-clan-searcher.appspot.com/o/test%2Ftest0.jpg?alt=media&token=4153f5c1-b61e-4ea9-a82a-0240464b8070", null, null, null],
+  //       name: "test" + i,
+  //       screenName: "screenName" + i,
+  //       tag: {
+  //         'rank': "test",
+  //         'policy': "test",
+  //         'login': "test",
+  //         'chat': "test",
+  //         'tool': "test",
+  //         'battleCount': "test",
+  //         'auto': "test",
+  //         'equipmentRequest': "test",
+  //         'battleDeclaration': "test",
+  //         'level': "test",
+  //         'strength': "test",
+  //         'character': "test",
+  //       },
+  //       updated_at: now,
+  //       userId: "testid" + i
+  //     });
+  //   }
+  //   console.log("done")
+  // };
 
-  const current = router.query.page ? parseInt(router.query.page as string) : 0;
-  let left = 0;
-  let center = 0;
-  let right = 0;
-  switch(current % 3) {
-    case 0:
-      left = current;
-      center = current + 1;
-      right = current + 2;
-      break;
-    case 1:
-      left = current - 1;
-      center = current;
-      right = current + 1;
-      break;
-    case 2:
-      left = current - 2;
-      center = current - 1;
-      right = current;
-      break;
-  }
   return (
     <div className="container pt-3">
       <div className="row gy-3">
         {
           state.list.map(e => (
             <React.Fragment key={e.userId}>
-              <div className="col-12 col-sm-6">
-                <img className="img-fluid" src={e.downloadUrls[0]} />
+              <div className="col-12 col-sm-6" id={e.userId}>
+                <img className="img-fluid" src={e.downloadUrls.find((e: string) => e !== "") ?? ""} />
               </div>
-              <div className="col-12 col-sm-6">
+              <div className="col-12 col-sm-6" onClick={() => {
+                dispatch(setClans({list: state.list, last: state.last}));
+                router.push({pathname: "/clan", query: {uid: e.userId}});
+              }}>
                 <div className="mb-3 fw-bold text-center">{ e.name }</div>
                 <div className="row row-cols-auto gx-1 mb-3">
                   {
@@ -147,8 +142,7 @@ const Home: NextPage = () => {
           ))
         }
       </div>
-
-      <button className="btn btn-primary" onClick={debug}>テストデータ作成</button>
+      {/* <button className="btn btn-primary" onClick={debug}>テストデータ作成</button> */}
     </div>
   )
 }

@@ -19,6 +19,8 @@ import {
 } from "firebase/firestore";
 import { Header } from "../components/header";
 import { Loader } from "../components/loader";
+import { Provider } from 'react-redux';
+import { store, setClans } from "../lib/redux";
 
 function MyApp({ Component, pageProps }: AppProps) {
   const [loaded, setLoaded] = useState(false);
@@ -69,7 +71,9 @@ function MyApp({ Component, pageProps }: AppProps) {
       { loaded ? (
           <>
             <Header />
-            <Component {...pageProps} />
+            <Provider store={store}>
+              <Component {...pageProps} />
+            </Provider>
           </>
         ) : <Loader />
       }

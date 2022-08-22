@@ -277,7 +277,7 @@ const Register: NextPage = () => {
                   <input accept=".jpg,.jpeg" id={"image" + i} style={{display: "none"}} className="mb-3" type="file" onChange={(event) => selectImage(event, i)} />
                 </label>
               </div>
-              <button className="btn btn-primary" onClick={() => removeImage(i)}>選択の解除</button>
+              <button type="button" className="btn btn-primary" onClick={() => removeImage(i)}>選択の解除</button>
             </div>
           ))
         }

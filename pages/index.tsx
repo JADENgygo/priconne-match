@@ -11,7 +11,7 @@ import utc from 'dayjs/plugin/utc';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { Loader } from "../components/loader";
-import { order } from "../lib/tag";
+import { order, tags } from "../lib/tag";
 import { Provider } from 'react-redux';
 import { store, setClans } from "../lib/redux";
 import { useDispatch } from 'react-redux';
@@ -22,33 +22,79 @@ dayjs.extend(timezone);
 
 // todo noimageを実装
 
+const SearchForm = () => {
+  const orderedTags = tags.sort((a, b) => order[a.label as keyof typeof order] - order[b.label as keyof typeof order]);
+  const [tag, setTag] = useState(
+    Object.fromEntries(
+      orderedTags.map((e, i) => [e.label, e.values[0]])
+    ) as {[key in keyof typeof order]: string}
+  );
+
+  const changeTag = (event: React.ChangeEvent<HTMLSelectElement>, name: string) => {
+    setTag({...tag, [name]: event.target.value});
+  };
+
+  return (
+    <div>
+      <div className="row gx-1 gy-1 text-center">
+        {
+          tags.sort((a, b) => order[a.label as keyof typeof order] - order[b.label as keyof typeof order]).map(e => (
+            <div className="col col-6 col-sm-4 col-md-3 col-lg-2" key={e.name}>
+              <div>{ e.name }</div>
+              <select value={tag[e.label as keyof typeof order]} onChange={event => changeTag(event, e.label)} className="form-select form-select-sm">
+                {
+                  e.values.map(e_ => (
+                    <option value={e_} key={e_}>{ e_ }</option>
+                  ))
+                }
+              </select>
+            </div>
+          ))
+        }
+      </div>
+      <button type="button" className="btn btn-primary mt-3" onClick={() => console.log('todo')}>検索</button>
+    </div>
+  )
+};
+
 const Home: NextPage = () => {
   const dispatch = useDispatch();
   const selector = useSelector((state: any) => state.clans);
   const router = useRouter();
+  const [readable, setReadable] = useState(true);
   const [state, setState] = useState({
     last: (null as unknown) as QueryDocumentSnapshot<DocumentData>,
     list: [] as DocumentData[],
   });
 
-  const search = async () => {
+  const search = async (after: QueryDocumentSnapshot<DocumentData> | null = null) => {
+    if (!readable) {
+      return;
+    }
+    console.info('search');
     const app = getApp();
     const db = getFirestore(app);
     const col = collection(db, "clans");
     let q;
     const size = 5;
-    if (state.last === null) {
+    if ((after ?? state.last) === null) {
       q = query(col, orderBy("updated_at", "desc"), limit(size))
     }
     else {
-      q = query(col, orderBy("updated_at", "desc"), startAfter(state.last), limit(size))
+      q = query(col, orderBy("updated_at", "desc"), startAfter(after ?? state.last), limit(size))
     }
     const snapshot = await getDocs(q);
     if (snapshot.size === 0) {
+      setReadable(false);
       return;
     }
-    const list = snapshot.docs.map(e => e.data());
-    setState({last: snapshot.docs[snapshot.size - 1], list: state.list.concat(list)});
+    const list = snapshot.docs.map(e => e.data()).filter(e => !e.closed);
+    if (list.length === 0) {
+      search(snapshot.docs[snapshot.size - 1]);
+    }
+    else {
+      setState({last: snapshot.docs[snapshot.size - 1], list: state.list.concat(list)});
+    }
   };
 
   const callbackRef = useRef(search);
@@ -113,10 +159,12 @@ const Home: NextPage = () => {
 
   return (
     <div className="container pt-3">
-      <div className="row gy-3">
+      <SearchForm />
+      <div className="row gy-3 mt-3">
         {
           state.list.map(e => (
             <React.Fragment key={e.userId}>
+              <hr />
               <div className="col-12 col-sm-6" id={e.userId}>
                 <img className="img-fluid" src={e.downloadUrls.find((e: string) => e !== "") ?? ""} />
               </div>

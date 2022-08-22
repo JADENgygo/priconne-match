@@ -19,19 +19,17 @@ import { Loader } from "../components/loader";
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
+// todo アコーディオンいる？
+
 const Register: NextPage = () => {
   const [confirmed, setConfirmed] = useState(false);
   const [validated, setValidated] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [deletable, setDeletable] = useState(false);
+  const orderedTags = tags.sort((a, b) => order[a.label as keyof typeof order] - order[b.label as keyof typeof order]);
   const [tag, setTag] = useState(
     Object.fromEntries(
-      Object.keys({...order}).
-        sort((a, b) => order[a as keyof typeof order] - order[b as keyof typeof order]).
-        map((e, i) => [
-          e,
-          tags.sort((a, b) => order[a.label as keyof typeof order] - order[b.label as keyof typeof order])[i].values[0]
-        ])
+      orderedTags.map((e, i) => [e.label, e.values[0]])
     ) as {[key in keyof typeof order]: string}
   );
   const [images, setImages] = useState([
@@ -245,10 +243,10 @@ const Register: NextPage = () => {
           <Accordion.Item eventKey="0">
             <Accordion.Header>タグ</Accordion.Header>
             <Accordion.Body>
-              <div className="row row-cols-auto gx-1 gy-3">
+              <div className="row gx-1 gy-1">
                 {
-                  tags.map((e, i) => (
-                    <div className="col" key={i}>
+                  orderedTags.map((e, i) => (
+                    <div className="col col-6 col-sm-4 col-md-3 col-lg-2" key={i}>
                       <div className="text-center">{ e.name }</div>
                       <select value={tag[e.label as keyof typeof order]} onChange={event => changeTag(event, e.label)} className="form-select form-select-sm">
                         {

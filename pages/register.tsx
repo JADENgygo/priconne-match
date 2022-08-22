@@ -5,7 +5,7 @@ import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import nookies from "nookies";
 import { GetServerSideProps } from "next";
-import { Accordion, Dropdown, DropdownButton } from "react-bootstrap";
+import { Accordion, Dropdown, DropdownButton, Form } from "react-bootstrap";
 import { order, tags } from "../lib/tag";
 import { getApp } from 'firebase/app';
 import { getAuth } from "firebase/auth";
@@ -20,14 +20,18 @@ dayjs.extend(utc);
 dayjs.extend(timezone);
 
 const Register: NextPage = () => {
+  const [confirmed, setConfirmed] = useState(false);
+  const [validated, setValidated] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [deletable, setDeletable] = useState(false);
   const [tag, setTag] = useState(
     Object.fromEntries(
-      Object.keys({...order}).map((e, i) => [
-        e,
-        tags.sort((a, b) => order[a.label as keyof typeof order] - order[b.label as keyof typeof order])[i].values[0]
-      ])
+      Object.keys({...order}).
+        sort((a, b) => order[a as keyof typeof order] - order[b as keyof typeof order]).
+        map((e, i) => [
+          e,
+          tags.sort((a, b) => order[a.label as keyof typeof order] - order[b.label as keyof typeof order])[i].values[0]
+        ])
     ) as {[key in keyof typeof order]: string}
   );
   const [images, setImages] = useState([
@@ -140,7 +144,14 @@ const Register: NextPage = () => {
 		});
 	};
 
-  const register = async () => {
+  const register = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.stopPropagation();
+    event.preventDefault();
+    if (info.name === "") {
+      setValidated(true);
+      return;
+    }
+
     const auth = getAuth();
     if (!auth.currentUser) {
       return;
@@ -226,68 +237,82 @@ const Register: NextPage = () => {
 
   return (
     <div className="container mt-3">
-      <label htmlFor="name" className="form-label">クラン名</label>
-      <input type="text" className="form-control" id="name" value={info.name} onChange={(event) => changeInfo(event, "name")} />
-      <Accordion className="mt-3">
-        <Accordion.Item eventKey="0">
-          <Accordion.Header>タグ</Accordion.Header>
-          <Accordion.Body>
-            <div className="row row-cols-auto gx-1 gy-3">
-              {
-                tags.map((e, i) => (
-                  <div className="col" key={i}>
-                    <div className="text-center">{ e.name }</div>
-                    <select value={tag[e.label as keyof typeof order]} onChange={event => changeTag(event, e.label)} className="form-select form-select-sm">
-                      {
-                        e.values.map(e_ => (
-                          <option value={e_} key={e_}>{ e_ }</option>
-                        ))
-                      }
-                    </select>
-                  </div>
-                ))
-              }
+      <Form validated={validated} noValidate onSubmit={register}>
+        <label htmlFor="name" className="form-label">クラン名</label>
+        <Form.Control type="text" id="name" value={info.name} onChange={(event) => changeInfo(event, "name")} required />
+        <Form.Control.Feedback type="invalid">クラン名の入力は必須です</Form.Control.Feedback>
+        <Accordion className="mt-3">
+          <Accordion.Item eventKey="0">
+            <Accordion.Header>タグ</Accordion.Header>
+            <Accordion.Body>
+              <div className="row row-cols-auto gx-1 gy-3">
+                {
+                  tags.map((e, i) => (
+                    <div className="col" key={i}>
+                      <div className="text-center">{ e.name }</div>
+                      <select value={tag[e.label as keyof typeof order]} onChange={event => changeTag(event, e.label)} className="form-select form-select-sm">
+                        {
+                          e.values.map(e_ => (
+                            <option value={e_} key={e_}>{ e_ }</option>
+                          ))
+                        }
+                      </select>
+                    </div>
+                  ))
+                }
+              </div>
+            </Accordion.Body>
+          </Accordion.Item>
+        </Accordion>
+        <div className="my-3">プロフィール画像</div>
+        <div className="row gy-3">
+        {
+          images.map((e, i) => (
+            <div className="col-6 col-sm-4 col-md-3 col-lg-2 text-center" key={i}>
+              <div className="mb-3">{ i + 1 }枚目</div>
+              <img src={e.src} className="img-fluid mb-3" />
+              <div>
+                <label className="btn btn-primary mb-3">
+                  画像の選択
+                  <input accept=".jpg,.jpeg" id={"image" + i} style={{display: "none"}} className="mb-3" type="file" onChange={(event) => selectImage(event, i)} />
+                </label>
+              </div>
+              <button className="btn btn-primary" onClick={() => removeImage(i)}>選択の解除</button>
             </div>
-          </Accordion.Body>
-        </Accordion.Item>
-      </Accordion>
-      <div className="my-3">プロフィール画像</div>
-      <div className="row gy-3">
-      {
-        images.map((e, i) => (
-          <div className="col-6 col-sm-4 col-md-3 col-lg-2 text-center" key={i}>
-            <div className="mb-3">{ i + 1 }枚目</div>
-            <img src={e.src} className="img-fluid mb-3" />
-            <div>
-              <label className="btn btn-primary mb-3">
-                画像の選択
-                <input accept=".jpg,.jpeg" id={"image" + i} style={{display: "none"}} className="mb-3" type="file" onChange={(event) => selectImage(event, i)} />
-              </label>
-            </div>
-            <button className="btn btn-primary" onClick={() => removeImage(i)}>選択の解除</button>
+          ))
+        }
+        </div>
+        <label htmlFor="description" className="form-label mt-3">説明</label>
+        <textarea className="form-control" id="description" rows={5} value={info.description} onChange={event => changeInfo(event, "description")}></textarea>
+        <label htmlFor="twitter" className="form-label mt-3">連絡先ツイッターアカウント</label>
+        <div className="input-group">
+          <span className="input-group-text">@</span>
+          <input type="text" className="form-control" id="twitter" value={info.twitter} onChange={event => changeInfo(event, "twitter")} />
+        </div>
+        <div className="mt-3">
+          <input className="form-check-input" type="checkbox" value="" id="private" checked={info.private} onChange={event => changeInfo(event, "private")} />
+          <label className="form-check-label" htmlFor="private">&nbsp;非公開にする</label>
+        </div>
+        <div className="row mt-3">
+          <div className="col-6">
+            <button type="submit" className="btn btn-primary">登録</button>
           </div>
-        ))
-      }
-      </div>
-      <label htmlFor="description" className="form-label mt-3">説明</label>
-      <textarea className="form-control" id="description" rows={5} value={info.description} onChange={event => changeInfo(event, "description")}></textarea>
-      <label htmlFor="twitter" className="form-label mt-3">連絡先ツイッターアカウント</label>
-      <div className="input-group">
-        <span className="input-group-text">@</span>
-        <input type="text" className="form-control" id="twitter" value={info.twitter} onChange={event => changeInfo(event, "twitter")} />
-      </div>
-      <div className="mt-3">
-        <input className="form-check-input" type="checkbox" value="" id="private" checked={info.private} onChange={event => changeInfo(event, "private")} />
-        <label className="form-check-label" htmlFor="private">&nbsp;非公開にする</label>
-      </div>
-      <div className="row mt-3">
-        <div className="col-6">
-          <button className="btn btn-primary" onClick={register}>登録</button>
+          <div className="col-6 text-end">
+            {
+              deletable && (
+                confirmed ? (
+                  <>
+                    <button type="button" className="btn btn-primary text-right me-3" onClick={() => setConfirmed(false)}>取消</button>
+                    <button type="button" className="btn btn-danger text-right" onClick={deleteClan}>削除</button>
+                  </>
+                ) : (
+                  <button type="button" className="btn btn-danger text-right" onClick={() => setConfirmed(true)}>削除確認</button>
+                )
+              )
+            }
+          </div>
         </div>
-        <div className="col-6 text-end">
-          { deletable && <button className="btn btn-danger text-right" onClick={deleteClan}>削除</button> }
-        </div>
-      </div>
+      </Form>
 
       <button onClick={debug}>ステート表示</button>
     </div>

@@ -22,53 +22,29 @@ dayjs.extend(timezone);
 
 // todo noimageを実装
 
-const SearchForm = ({search}: {search: () => void}) => {
-  const orderedTags = tags.sort((a, b) => order[a.label as keyof typeof order] - order[b.label as keyof typeof order]);
-  const [tag, setTag] = useState(
-    Object.fromEntries(
-      orderedTags.map((e, i) => [e.label, e.values[0]])
-    ) as {[key in keyof typeof order]: string}
-  );
-
-  const changeTag = (event: React.ChangeEvent<HTMLSelectElement>, name: string) => {
-    setTag({...tag, [name]: event.target.value});
-  };
-
-  return (
-    <div>
-      <div className="row gx-1 gy-1 text-center">
-        {
-          tags.sort((a, b) => order[a.label as keyof typeof order] - order[b.label as keyof typeof order]).map(e => (
-            <div className="col col-6 col-sm-4 col-md-3 col-lg-2" key={e.name}>
-              <div>{ e.name }</div>
-              <select value={tag[e.label as keyof typeof order]} onChange={event => changeTag(event, e.label)} className="form-select form-select-sm">
-                {
-                  e.values.map(e_ => (
-                    <option value={e_} key={e_}>{ e_ }</option>
-                  ))
-                }
-              </select>
-            </div>
-          ))
-        }
-      </div>
-      <button type="button" className="btn btn-primary mt-3" onClick={() => search()}>検索</button>
-    </div>
-  )
-};
-
 const Home: NextPage = () => {
   const dispatch = useDispatch();
   const selector = useSelector((state: any) => state.clans);
   const router = useRouter();
   const [readable, setReadable] = useState(true);
   const [state, setState] = useState({
-    last: (null as unknown) as QueryDocumentSnapshot<DocumentData>,
+    last: null as (QueryDocumentSnapshot<DocumentData> | null),
     list: [] as DocumentData[],
   });
+  const orderedTags = tags.sort((a, b) => order[a.label as keyof typeof order] - order[b.label as keyof typeof order]);
+  const [tag, setTag] = useState(
+    Object.fromEntries(
+      orderedTags.map((e, i) => [e.label, e.values[0]])
+    ) as {[key in keyof typeof order]: string}
+  );
+  const [filtered, setFiltered] = useState(false);
 
-  const search = async () => {
-    if (!readable) {
+  const changeTag = (event: React.ChangeEvent<HTMLSelectElement>, name: string) => {
+    setTag({...tag, [name]: event.target.value});
+  };
+
+  const search = async (kind: "normal" | "filter" | "release" = "normal") => {
+    if (kind !== "filter" && kind !== "release" && !readable) {
       return;
     }
     console.info('search');
@@ -77,19 +53,44 @@ const Home: NextPage = () => {
     const col = collection(db, "clans");
     let q;
     const size = 5;
-    if (state.last === null) {
-      q = query(col, where("closed", "==", false), orderBy("updated_at", "desc"), limit(size))
+    const wheres = Object.keys(tag).map(e => where("tag." + e, "==", tag[e as keyof typeof order]));
+    if ((kind === "filter" || kind === "release") || state.last === null) {
+      if (kind === "filter" || (kind !== "release" && filtered)) {
+        console.log('a', tag)
+        q = query(col, where("closed", "==", false), ...wheres, orderBy("updated_at", "desc"), limit(size))
+      }
+      else {
+        console.log('b', tag)
+        q = query(col, where("closed", "==", false), orderBy("updated_at", "desc"), limit(size))
+      }
     }
     else {
-      q = query(col, where("closed", "==", false), orderBy("updated_at", "desc"), startAfter(state.last), limit(size))
+      if (filtered) {
+        console.log('c', tag)
+        q = query(col, where("closed", "==", false), ...wheres, orderBy("updated_at", "desc"), startAfter(state.last), limit(size))
+      }
+      else {
+        console.log('d', tag)
+        q = query(col, where("closed", "==", false), orderBy("updated_at", "desc"), startAfter(state.last), limit(size))
+      }
     }
     const snapshot = await getDocs(q);
     if (snapshot.size === 0) {
       setReadable(false);
+      if (kind === "filter" || kind === "release") {
+        setState({last: null, list: []});
+      }
       return;
     }
     const list = snapshot.docs.map(e => e.data());
-    setState({last: snapshot.docs[snapshot.size - 1], list: state.list.concat(list)});
+    if (kind  === "filter" || kind === "release") {
+      setReadable(true);
+      setFiltered(kind === "filter");
+      setState({last: snapshot.docs[snapshot.size - 1], list: list});
+    }
+    else {
+      setState({last: snapshot.docs[snapshot.size - 1], list: state.list.concat(list)});
+    }
   };
 
   const callbackRef = useRef(search);
@@ -154,7 +155,24 @@ const Home: NextPage = () => {
 
   return (
     <div className="container pt-3">
-      <SearchForm search={search} />
+      <div className="row gx-1 gy-1 text-center">
+        {
+          tags.sort((a, b) => order[a.label as keyof typeof order] - order[b.label as keyof typeof order]).map(e => (
+            <div className="col col-6 col-sm-4 col-md-3 col-lg-2" key={e.name}>
+              <div>{ e.name }</div>
+              <select value={tag[e.label as keyof typeof order]} onChange={event => changeTag(event, e.label)} className="form-select form-select-sm">
+                {
+                  e.values.map(e_ => (
+                    <option value={e_} key={e_}>{ e_ }</option>
+                  ))
+                }
+              </select>
+            </div>
+          ))
+        }
+      </div>
+      <button type="button" className="btn btn-primary mt-3 me-3" onClick={() => search("filter")}>絞り込み</button>
+      <button type="button" className="btn btn-primary mt-3" onClick={() => search("release")}>解除</button>
       <div className="row gy-3 mt-3">
         {
           state.list.map(e => (

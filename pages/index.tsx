@@ -16,11 +16,10 @@ import { Provider } from 'react-redux';
 import { store, setClans } from "../lib/redux";
 import { useDispatch } from 'react-redux';
 import { useSelector } from 'react-redux';
+import { Modal } from 'react-bootstrap';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
-
-// todo noimageを実装
 
 const Home: NextPage = () => {
   const dispatch = useDispatch();
@@ -34,13 +33,20 @@ const Home: NextPage = () => {
   const orderedTags = tags.sort((a, b) => order[a.label as keyof typeof order] - order[b.label as keyof typeof order]);
   const [tag, setTag] = useState(
     Object.fromEntries(
-      orderedTags.map((e, i) => [e.label, e.values[0]])
+      orderedTags.map(e => [e.label, e.values[0]])
     ) as {[key in keyof typeof order]: string}
   );
   const [filtered, setFiltered] = useState(false);
+  const [targets, setTargets] = useState(Object.fromEntries(orderedTags.map(e => [e.label, false])));
+  const [expanded, setExpanded] = useState(false);
+  const [url, setUrl] = useState("");
 
   const changeTag = (event: React.ChangeEvent<HTMLSelectElement>, name: string) => {
     setTag({...tag, [name]: event.target.value});
+  };
+
+  const changeTargets = (event: React.ChangeEvent<HTMLInputElement>, name: string) => {
+    setTargets({...targets, [name]: event.target.checked});
   };
 
   const search = async (kind: "normal" | "filter" | "release" = "normal") => {
@@ -53,25 +59,25 @@ const Home: NextPage = () => {
     const col = collection(db, "clans");
     let q;
     const size = 5;
-    const wheres = Object.keys(tag).map(e => where("tag." + e, "==", tag[e as keyof typeof order]));
+    const wheres = Object.keys(tag).filter(e => targets[e]).map(e => where("tag." + e, "==", tag[e as keyof typeof order]));
     if ((kind === "filter" || kind === "release") || state.last === null) {
       if (kind === "filter" || (kind !== "release" && filtered)) {
         console.log('a', tag)
-        q = query(col, where("closed", "==", false), ...wheres, orderBy("updated_at", "desc"), limit(size))
+        q = query(col, where("closed", "==", false), ...wheres, limit(size))
       }
       else {
         console.log('b', tag)
-        q = query(col, where("closed", "==", false), orderBy("updated_at", "desc"), limit(size))
+        q = query(col, where("closed", "==", false), limit(size))
       }
     }
     else {
       if (filtered) {
         console.log('c', tag)
-        q = query(col, where("closed", "==", false), ...wheres, orderBy("updated_at", "desc"), startAfter(state.last), limit(size))
+        q = query(col, where("closed", "==", false), ...wheres, startAfter(state.last), limit(size))
       }
       else {
         console.log('d', tag)
-        q = query(col, where("closed", "==", false), orderBy("updated_at", "desc"), startAfter(state.last), limit(size))
+        q = query(col, where("closed", "==", false), startAfter(state.last), limit(size))
       }
     }
     const snapshot = await getDocs(q);
@@ -82,7 +88,7 @@ const Home: NextPage = () => {
       }
       return;
     }
-    const list = snapshot.docs.map(e => e.data());
+    const list = snapshot.docs.map(e => e.data()).sort((a, b) => a.updated_at < b.updated_at ? 1 : -1);
     if (kind  === "filter" || kind === "release") {
       setReadable(true);
       setFiltered(kind === "filter");
@@ -155,11 +161,15 @@ const Home: NextPage = () => {
 
   return (
     <div className="container pt-3">
+
       <div className="row gx-1 gy-1 text-center">
         {
-          tags.sort((a, b) => order[a.label as keyof typeof order] - order[b.label as keyof typeof order]).map(e => (
+          orderedTags.map(e => (
             <div className="col col-6 col-sm-4 col-md-3 col-lg-2" key={e.name}>
-              <div>{ e.name }</div>
+              <div>
+                <input className="form-check-input me-1" type="checkbox" value="" id="private" checked={targets[e.label]} onChange={event => changeTargets(event, e.label)} />
+                <span>{ e.name }</span>
+              </div>
               <select value={tag[e.label as keyof typeof order]} onChange={event => changeTag(event, e.label)} className="form-select form-select-sm">
                 {
                   e.values.map(e_ => (
@@ -179,7 +189,20 @@ const Home: NextPage = () => {
             <React.Fragment key={e.userId}>
               <hr />
               <div className="col-12 col-sm-6" id={e.userId}>
-                <img className="img-fluid" src={e.downloadUrls.find((e: string) => e !== "") ?? ""} />
+                {
+                  e.downloadUrls.every((e: string) => e === "") ? (
+                    <div className="d-flex justify-content-center align-items-center h-100">
+                      <div>NO IMAGE</div>
+                    </div>
+                  ) : (
+                    <>
+                      <img className="img-fluid" src={e.downloadUrls.find((e: string) => e !== "")} onClick={() => {
+                        setUrl(e.downloadUrls.find((e: string) => e !== ""));
+                        setExpanded(true);
+                      }} />
+                    </>
+                  )
+                }
               </div>
               <div className="col-12 col-sm-6" onClick={() => {
                 dispatch(setClans({list: state.list, last: state.last}));
@@ -203,6 +226,21 @@ const Home: NextPage = () => {
           ))
         }
       </div>
+      <Modal show={expanded} fullscreen={true} onHide={() => setExpanded(false)}>
+        <Modal.Header closeButton onClick={() => setExpanded(false)}></Modal.Header>
+        <Modal.Body className="m-0 p-0">
+          <div className="d-flex justify-content-center align-items-center h-100" onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setExpanded(false);
+            }
+          }}>
+            <div>
+              {/* todo: 小さい画像でも最大化したい */}
+              <img className="img-fluid" src={url} />
+            </div>
+          </div>
+        </Modal.Body>
+      </Modal>
       {/* <button className="btn btn-primary" onClick={debug}>テストデータ作成</button> */}
     </div>
   )

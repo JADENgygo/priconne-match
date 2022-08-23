@@ -83,9 +83,9 @@ const Register: NextPage = () => {
     return <Loader />
   }
 
-  const debug = () => {
-    console.log(info, tag, images);
-  };
+  // const debug = () => {
+  //   console.log(info, tag, images);
+  // };
 
   const changeTag = (event: React.ChangeEvent<HTMLSelectElement>, name: string) => {
     setTag({...tag, [name]: event.target.value});
@@ -289,7 +289,7 @@ const Register: NextPage = () => {
         </div>
         <div className="mt-3">
           <input className="form-check-input" type="checkbox" value="" id="private" checked={info.private} onChange={event => changeInfo(event, "private")} />
-          <label className="form-check-label" htmlFor="private">&nbsp;非公開にする</label>
+          <label className="form-check-label" htmlFor="private"><span className="ms-1">非公開にする</span></label>
         </div>
         <div className="row mt-3">
           <div className="col-6">
@@ -312,7 +312,7 @@ const Register: NextPage = () => {
         </div>
       </Form>
 
-      <button onClick={debug}>ステート表示</button>
+      {/* <button onClick={debug}>ステート表示</button> */}
     </div>
   );
 };

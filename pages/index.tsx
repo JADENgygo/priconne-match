@@ -2,7 +2,7 @@ import type { NextPage } from 'next'
 import Image from 'next/image'
 import styles from '../styles/Home.module.css'
 import { getApp } from 'firebase/app';
-import { collection, getFirestore, doc, setDoc, getDocs, query, orderBy, limit, startAfter, DocumentData, QueryDocumentSnapshot } from "firebase/firestore";
+import { collection, getFirestore, doc, setDoc, getDocs, query, orderBy, limit, startAfter, DocumentData, QueryDocumentSnapshot, where } from "firebase/firestore";
 import React, { ComponentType, useEffect, useReducer, useRef, useState } from 'react';
 import { getStorage, ref, getDownloadURL } from "firebase/storage";
 import dayjs from "dayjs";
@@ -22,7 +22,7 @@ dayjs.extend(timezone);
 
 // todo noimageを実装
 
-const SearchForm = () => {
+const SearchForm = ({search}: {search: () => void}) => {
   const orderedTags = tags.sort((a, b) => order[a.label as keyof typeof order] - order[b.label as keyof typeof order]);
   const [tag, setTag] = useState(
     Object.fromEntries(
@@ -52,7 +52,7 @@ const SearchForm = () => {
           ))
         }
       </div>
-      <button type="button" className="btn btn-primary mt-3" onClick={() => console.log('todo')}>検索</button>
+      <button type="button" className="btn btn-primary mt-3" onClick={() => search()}>検索</button>
     </div>
   )
 };
@@ -67,7 +67,7 @@ const Home: NextPage = () => {
     list: [] as DocumentData[],
   });
 
-  const search = async (after: QueryDocumentSnapshot<DocumentData> | null = null) => {
+  const search = async () => {
     if (!readable) {
       return;
     }
@@ -77,24 +77,19 @@ const Home: NextPage = () => {
     const col = collection(db, "clans");
     let q;
     const size = 5;
-    if ((after ?? state.last) === null) {
-      q = query(col, orderBy("updated_at", "desc"), limit(size))
+    if (state.last === null) {
+      q = query(col, where("closed", "==", false), orderBy("updated_at", "desc"), limit(size))
     }
     else {
-      q = query(col, orderBy("updated_at", "desc"), startAfter(after ?? state.last), limit(size))
+      q = query(col, where("closed", "==", false), orderBy("updated_at", "desc"), startAfter(state.last), limit(size))
     }
     const snapshot = await getDocs(q);
     if (snapshot.size === 0) {
       setReadable(false);
       return;
     }
-    const list = snapshot.docs.map(e => e.data()).filter(e => !e.closed);
-    if (list.length === 0) {
-      search(snapshot.docs[snapshot.size - 1]);
-    }
-    else {
-      setState({last: snapshot.docs[snapshot.size - 1], list: state.list.concat(list)});
-    }
+    const list = snapshot.docs.map(e => e.data());
+    setState({last: snapshot.docs[snapshot.size - 1], list: state.list.concat(list)});
   };
 
   const callbackRef = useRef(search);
@@ -159,7 +154,7 @@ const Home: NextPage = () => {
 
   return (
     <div className="container pt-3">
-      <SearchForm />
+      <SearchForm search={search} />
       <div className="row gy-3 mt-3">
         {
           state.list.map(e => (

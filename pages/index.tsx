@@ -60,18 +60,18 @@ const Home: NextPage = () => {
     const wheres = Object.keys(tag).filter(e => targets[e]).map(e => where("tag." + e, "==", tag[e as keyof typeof order]));
     if ((kind === "filter" || kind === "release") || state.last === null) {
       if (kind === "filter" || (kind !== "release" && filtered)) {
-        q = query(col, where("closed", "==", !false), ...wheres, limit(size))
+        q = query(col, where("closed", "==", false), ...wheres, limit(size))
       }
       else {
-        q = query(col, where("closed", "==", !false), limit(size))
+        q = query(col, where("closed", "==", false), limit(size))
       }
     }
     else {
       if (filtered) {
-        q = query(col, where("closed", "==", !false), ...wheres, startAfter(state.last), limit(size))
+        q = query(col, where("closed", "==", false), ...wheres, startAfter(state.last), limit(size))
       }
       else {
-        q = query(col, where("closed", "==", !false), startAfter(state.last), limit(size))
+        q = query(col, where("closed", "==", false), startAfter(state.last), limit(size))
       }
     }
     const snapshot = await getDocs(q);

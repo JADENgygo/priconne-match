@@ -288,7 +288,7 @@ const Register: NextPage = () => {
           <input type="text" className="form-control" id="twitter" value={info.twitter} onChange={event => changeInfo(event, "twitter")} />
         </div>
         <div className="mt-3">
-          <input className="form-check-input" type="checkbox" value="" id="private" checked={info.private} onChange={event => changeInfo(event, "private")} />
+          <input className="form-check-input" type="checkbox" id="private" checked={info.private} onChange={event => changeInfo(event, "private")} />
           <label className="form-check-label" htmlFor="private"><span className="ms-1">非公開にする</span></label>
         </div>
         <div className="row mt-3">

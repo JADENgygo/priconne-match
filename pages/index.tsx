@@ -21,6 +21,10 @@ import { Modal } from 'react-bootstrap';
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
+// todo アカウント削除の実装
+// todo スクロール問題
+// todo ｄｂのタグの値修正(外部ツール)
+
 const Home: NextPage = () => {
   const dispatch = useDispatch();
   const selector = useSelector((state: any) => state.clans);
@@ -63,21 +67,21 @@ const Home: NextPage = () => {
     if ((kind === "filter" || kind === "release") || state.last === null) {
       if (kind === "filter" || (kind !== "release" && filtered)) {
         console.log('a', tag)
-        q = query(col, where("closed", "==", false), ...wheres, limit(size))
+        q = query(col, where("closed", "==", !false), ...wheres, limit(size))
       }
       else {
         console.log('b', tag)
-        q = query(col, where("closed", "==", false), limit(size))
+        q = query(col, where("closed", "==", !false), limit(size))
       }
     }
     else {
       if (filtered) {
         console.log('c', tag)
-        q = query(col, where("closed", "==", false), ...wheres, startAfter(state.last), limit(size))
+        q = query(col, where("closed", "==", !false), ...wheres, startAfter(state.last), limit(size))
       }
       else {
         console.log('d', tag)
-        q = query(col, where("closed", "==", false), startAfter(state.last), limit(size))
+        q = query(col, where("closed", "==", !false), startAfter(state.last), limit(size))
       }
     }
     const snapshot = await getDocs(q);
@@ -161,14 +165,15 @@ const Home: NextPage = () => {
 
   return (
     <div className="container pt-3">
-
       <div className="row gx-1 gy-1 text-center">
         {
           orderedTags.map(e => (
             <div className="col col-6 col-sm-4 col-md-3 col-lg-2" key={e.name}>
               <div>
-                <input className="form-check-input me-1" type="checkbox" value="" id="private" checked={targets[e.label]} onChange={event => changeTargets(event, e.label)} />
-                <span>{ e.name }</span>
+                <label>
+                  <input className="form-check-input me-1" type="checkbox" checked={targets[e.label]} onChange={event => changeTargets(event, e.label)} />
+                  { e.name }
+                </label>
               </div>
               <select value={tag[e.label as keyof typeof order]} onChange={event => changeTag(event, e.label)} className="form-select form-select-sm">
                 {
@@ -189,26 +194,26 @@ const Home: NextPage = () => {
             <React.Fragment key={e.userId}>
               <hr />
               <div className="col-12 col-sm-6" id={e.userId}>
-                {
-                  e.downloadUrls.every((e: string) => e === "") ? (
-                    <div className="d-flex justify-content-center align-items-center h-100">
+                <div className="d-flex justify-content-center align-items-center h-100">
+                  {
+                    e.downloadUrls.every((e: string) => e === "") ? (
                       <div>NO IMAGE</div>
-                    </div>
-                  ) : (
-                    <>
-                      <img className="img-fluid" src={e.downloadUrls.find((e: string) => e !== "")} onClick={() => {
-                        setUrl(e.downloadUrls.find((e: string) => e !== ""));
-                        setExpanded(true);
-                      }} />
-                    </>
-                  )
-                }
+                    ) : (
+                      <div>
+                        <img className="img-fluid" src={e.downloadUrls.find((e: string) => e !== "")} onClick={() => {
+                          setUrl(e.downloadUrls.find((e: string) => e !== ""));
+                          setExpanded(true);
+                        }} />
+                      </div>
+                    )
+                  }
+                </div>
               </div>
-              <div className="col-12 col-sm-6" onClick={() => {
+              <div className="col-12 col-sm-6 position-relative" onClick={() => {
                 dispatch(setClans({list: state.list, last: state.last}));
                 router.push({pathname: "/clan", query: {uid: e.userId}});
               }}>
-                <div className="mb-3 fw-bold text-center">{ e.name }</div>
+                <div className="mb-3 fw-bold text-center">{ e.name.slice(0, 10) }</div>
                 <div className="row row-cols-auto gx-1 mb-3">
                   {
                     (Object.keys(e.tag) as (keyof typeof order)[])
@@ -220,7 +225,13 @@ const Home: NextPage = () => {
                       ))
                   }
                 </div>
-                <div>{ e.description }</div>
+                <div>{ e.description.length <= 100 ? e.description : (e.description.slice(0, 100) + "…")  }</div>
+                <div className="text-end mt-3">
+                  <button type="button" className="btn btn-outline-secondary btn-sm" onClick={(e) => {
+                    e.stopPropagation();
+                    window.scroll({top: 0, behavior: "smooth"});
+                  }}>トップにスクロール</button>
+                </div>
               </div>
             </React.Fragment>
           ))

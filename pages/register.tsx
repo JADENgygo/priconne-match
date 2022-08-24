@@ -19,8 +19,6 @@ import { Loader } from "../components/loader";
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
-// todo アコーディオンいる？
-
 const Register: NextPage = () => {
   const [confirmed, setConfirmed] = useState(false);
   const [validated, setValidated] = useState(false);
@@ -82,10 +80,6 @@ const Register: NextPage = () => {
   if (loaded) {
     return <Loader />
   }
-
-  // const debug = () => {
-  //   console.log(info, tag, images);
-  // };
 
   const changeTag = (event: React.ChangeEvent<HTMLSelectElement>, name: string) => {
     setTag({...tag, [name]: event.target.value});
@@ -239,29 +233,23 @@ const Register: NextPage = () => {
         <label htmlFor="name" className="form-label">クラン名</label>
         <Form.Control type="text" id="name" value={info.name} onChange={(event) => changeInfo(event, "name")} required />
         <Form.Control.Feedback type="invalid">クラン名の入力は必須です</Form.Control.Feedback>
-        <Accordion className="mt-3">
-          <Accordion.Item eventKey="0">
-            <Accordion.Header>タグ</Accordion.Header>
-            <Accordion.Body>
-              <div className="row gx-1 gy-1">
-                {
-                  orderedTags.map((e, i) => (
-                    <div className="col col-6 col-sm-4 col-md-3 col-lg-2" key={i}>
-                      <div className="text-center">{ e.name }</div>
-                      <select value={tag[e.label as keyof typeof order]} onChange={event => changeTag(event, e.label)} className="form-select form-select-sm">
-                        {
-                          e.values.map(e_ => (
-                            <option value={e_} key={e_}>{ e_ }</option>
-                          ))
-                        }
-                      </select>
-                    </div>
-                  ))
-                }
-              </div>
-            </Accordion.Body>
-          </Accordion.Item>
-        </Accordion>
+        <div className="mt-3">タグ</div>
+          <div className="row gx-1 gy-1">
+            {
+              orderedTags.map((e, i) => (
+                <div className="col col-6 col-sm-4 col-md-3 col-lg-2" key={i}>
+                  <div className="text-center">{ e.name }</div>
+                  <select value={tag[e.label as keyof typeof order]} onChange={event => changeTag(event, e.label)} className="form-select form-select-sm">
+                    {
+                      e.values.map(e_ => (
+                        <option value={e_} key={e_}>{ e_ }</option>
+                      ))
+                    }
+                  </select>
+                </div>
+              ))
+            }
+          </div>
         <div className="my-3">プロフィール画像</div>
         <div className="row gy-3">
         {
@@ -311,8 +299,6 @@ const Register: NextPage = () => {
           </div>
         </div>
       </Form>
-
-      {/* <button onClick={debug}>ステート表示</button> */}
     </div>
   );
 };

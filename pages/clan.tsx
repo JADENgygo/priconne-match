@@ -4,10 +4,8 @@ import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import { getApp } from 'firebase/app';
 import { getAuth } from "firebase/auth";
-import { getAuth as getAdminAuth } from "firebase-admin/auth";
 import { collection, getFirestore, doc, setDoc, deleteDoc, getDoc, getDocs, query, orderBy, limit, startAfter, DocumentData, QueryDocumentSnapshot } from "firebase/firestore";
 import { order, tags } from "../lib/tag";
-import Link from "next/link";
 
 const Clan: NextPage = () => {
   const [editable, setEditable] = useState(false);
@@ -33,16 +31,6 @@ const Clan: NextPage = () => {
       setEditable(router.query.uid === auth.currentUser.uid);
     };
     f();
-
-    // window.onpopstate = (e) => {
-    //   console.log('popstate')
-    //   history.pushState(null, "", location.origin + "#" + router.query.uid as string);
-    //   // history.go(1);
-    //   // e.stopPropagation();
-    //   // location.href += "#" + router.query.uid as string;
-    //   // console.log(location.href)
-    //   // console.log(e)
-    // }
   }, []);
 
   const router = useRouter();

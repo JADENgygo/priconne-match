@@ -13,10 +13,6 @@ import {
   getAuth,
   getRedirectResult,
 } from "firebase/auth";
-import {
-  initializeFirestore,
-  connectFirestoreEmulator,
-} from "firebase/firestore";
 import { Header } from "../components/header";
 import { Loader } from "../components/loader";
 import { Provider } from 'react-redux';

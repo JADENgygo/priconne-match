@@ -1,18 +1,13 @@
 import type { NextPage } from 'next'
-import Image from 'next/image'
-import styles from '../styles/Home.module.css'
 import { getApp } from 'firebase/app';
 import { collection, getFirestore, doc, setDoc, getDocs, query, orderBy, limit, startAfter, DocumentData, QueryDocumentSnapshot, where } from "firebase/firestore";
 import React, { ComponentType, useEffect, useReducer, useRef, useState } from 'react';
-import { getStorage, ref, getDownloadURL } from "firebase/storage";
 import dayjs from "dayjs";
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
-import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { Loader } from "../components/loader";
 import { order, tags } from "../lib/tag";
-import { Provider } from 'react-redux';
 import { store, setClans } from "../lib/redux";
 import { useDispatch } from 'react-redux';
 import { useSelector } from 'react-redux';
@@ -21,8 +16,7 @@ import { Modal } from 'react-bootstrap';
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
-// todo アカウント削除の実装
-// todo スクロール問題
+// todo 小さい画像でも最大化したい
 // todo ｄｂのタグの値修正(外部ツール)
 
 const Home: NextPage = () => {
@@ -66,21 +60,17 @@ const Home: NextPage = () => {
     const wheres = Object.keys(tag).filter(e => targets[e]).map(e => where("tag." + e, "==", tag[e as keyof typeof order]));
     if ((kind === "filter" || kind === "release") || state.last === null) {
       if (kind === "filter" || (kind !== "release" && filtered)) {
-        console.log('a', tag)
         q = query(col, where("closed", "==", !false), ...wheres, limit(size))
       }
       else {
-        console.log('b', tag)
         q = query(col, where("closed", "==", !false), limit(size))
       }
     }
     else {
       if (filtered) {
-        console.log('c', tag)
         q = query(col, where("closed", "==", !false), ...wheres, startAfter(state.last), limit(size))
       }
       else {
-        console.log('d', tag)
         q = query(col, where("closed", "==", !false), startAfter(state.last), limit(size))
       }
     }
@@ -121,6 +111,15 @@ const Home: NextPage = () => {
       }
     };
     window.addEventListener('scroll', f);
+
+    setTimeout(() => {
+      const storage = sessionStorage;
+      const scroll = storage.getItem('scroll');
+      if (scroll) {
+        window.scroll({top: parseInt(scroll), behavior: "smooth"});
+      }
+    }, 150);
+
     return () => window.removeEventListener("scroll", f);
   }, []);
 
@@ -128,40 +127,6 @@ const Home: NextPage = () => {
     router.replace("/?page=0");
     return <Loader />;
   }
-
-  // const debug = async () => {
-  //   const app = getApp();
-  //   const db = getFirestore(app);
-
-  //   for (let i = 0; i < 100; ++i) {
-  //     const now = dayjs().tz("Asia/Tokyo"). format('YYYY-MM-DDTHH:mm:ss.SSS+09:00');
-  //     await setDoc(doc(db, "clans", "test" + i), {
-  //       closed: true,
-  //       created_at: now,
-  //       description: "description" + i,
-  //       downloadUrls: ["https://firebasestorage.googleapis.com/v0/b/princess-connect-clan-searcher.appspot.com/o/test%2Ftest0.jpg?alt=media&token=4153f5c1-b61e-4ea9-a82a-0240464b8070", null, null, null],
-  //       name: "test" + i,
-  //       screenName: "screenName" + i,
-  //       tag: {
-  //         'rank': "test",
-  //         'policy': "test",
-  //         'login': "test",
-  //         'chat': "test",
-  //         'tool': "test",
-  //         'battleCount': "test",
-  //         'auto': "test",
-  //         'equipmentRequest': "test",
-  //         'battleDeclaration': "test",
-  //         'level': "test",
-  //         'strength': "test",
-  //         'character': "test",
-  //       },
-  //       updated_at: now,
-  //       userId: "testid" + i
-  //     });
-  //   }
-  //   console.log("done")
-  // };
 
   return (
     <div className="container pt-3">
@@ -211,6 +176,8 @@ const Home: NextPage = () => {
               </div>
               <div className="col-12 col-sm-6 position-relative" onClick={() => {
                 dispatch(setClans({list: state.list, last: state.last}));
+                const storage = sessionStorage;
+                storage.setItem('scroll', document.documentElement.scrollTop.toString());
                 router.push({pathname: "/clan", query: {uid: e.userId}});
               }}>
                 <div className="mb-3 fw-bold text-center">{ e.name.slice(0, 10) }</div>
@@ -246,13 +213,11 @@ const Home: NextPage = () => {
             }
           }}>
             <div>
-              {/* todo: 小さい画像でも最大化したい */}
               <img className="img-fluid" src={url} />
             </div>
           </div>
         </Modal.Body>
       </Modal>
-      {/* <button className="btn btn-primary" onClick={debug}>テストデータ作成</button> */}
     </div>
   )
 }

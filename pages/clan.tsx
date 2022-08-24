@@ -6,11 +6,15 @@ import { getApp } from 'firebase/app';
 import { getAuth } from "firebase/auth";
 import { collection, getFirestore, doc, setDoc, deleteDoc, getDoc, getDocs, query, orderBy, limit, startAfter, DocumentData, QueryDocumentSnapshot } from "firebase/firestore";
 import { order, tags } from "../lib/tag";
+import { Modal } from 'react-bootstrap';
 
 const Clan: NextPage = () => {
   const [editable, setEditable] = useState(false);
   const [state, setState] = useState({} as any);
   const [loaded, setLoaded] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const [url, setUrl] = useState("");
+
   useEffect(() => {
     const f = async () => {
       const auth = getAuth();
@@ -56,7 +60,10 @@ const Clan: NextPage = () => {
           {
             state.downloadUrls.filter((e: string) => e !== "").map((e: string, i: number) => (
               <div className="col-12 col-sm-6 col-md-4 col-lg-3" key={i}>
-                <img className="img-fluid" src={e} />
+                <img className="img-fluid" src={e} onClick={() => {
+                  setUrl(e);
+                  setExpanded(true);
+                }} />
               </div>
             ))
           }
@@ -64,6 +71,20 @@ const Clan: NextPage = () => {
         <p>{ state.description }</p>
         { state.twitter !== "" && <p>Twitter: <a href={"https://twitter.com/" + state.twitter}>@{ state.twitter }</a></p> }
         { editable && <button className="btn btn-primary" onClick={() => router.push("/register")}>編集</button> }
+        <Modal show={expanded} fullscreen={true} onHide={() => setExpanded(false)}>
+          <Modal.Header closeButton onClick={() => setExpanded(false)}></Modal.Header>
+          <Modal.Body className="m-0 p-0">
+            <div className="d-flex justify-content-center align-items-center h-100" onClick={(e) => {
+              if (e.target === e.currentTarget) {
+                setExpanded(false);
+              }
+            }}>
+              <div>
+                <img className="img-fluid" src={url} />
+              </div>
+            </div>
+          </Modal.Body>
+        </Modal>
       </div>
     ) : <Loader />
   )

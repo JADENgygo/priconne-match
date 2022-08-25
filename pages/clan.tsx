@@ -17,10 +17,6 @@ const Clan: NextPage = () => {
 
   useEffect(() => {
     const f = async () => {
-      const auth = getAuth();
-      if (!auth.currentUser) {
-        return;
-      }
       const app = getApp();
       const db = getFirestore(app);
       const docRef = doc(db, "clans", router.query.uid as string);
@@ -32,6 +28,10 @@ const Clan: NextPage = () => {
       setState({name: data.name, description: data.description, twitter: data.screenName, tag: data.tag, downloadUrls: data.downloadUrls});
       setLoaded(true);
 
+      const auth = getAuth();
+      if (!auth.currentUser) {
+        return;
+      }
       setEditable(router.query.uid === auth.currentUser.uid);
     };
     f();

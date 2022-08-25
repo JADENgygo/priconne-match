@@ -16,9 +16,6 @@ import { Modal } from 'react-bootstrap';
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
-// todo スクロールのかくつき　スマホ
-// todo ｄｂのタグの値修正(外部ツール) downloadsのnullの修正
-
 const Home: NextPage = () => {
   const dispatch = useDispatch();
   const selector = useSelector((state: any) => state.clans);

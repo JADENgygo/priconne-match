@@ -16,8 +16,8 @@ import { Modal } from 'react-bootstrap';
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
-// todo 小さい画像でも最大化したい
-// todo ｄｂのタグの値修正(外部ツール)
+// todo スクロールのかくつき　スマホ
+// todo ｄｂのタグの値修正(外部ツール) downloadsのnullの修正
 
 const Home: NextPage = () => {
   const dispatch = useDispatch();
@@ -116,7 +116,7 @@ const Home: NextPage = () => {
       const storage = sessionStorage;
       const scroll = storage.getItem('scroll');
       if (scroll) {
-        window.scroll({top: parseInt(scroll), behavior: "smooth"});
+        // window.scroll({top: parseInt(scroll), behavior: "smooth"});
       }
     }, 150);
 

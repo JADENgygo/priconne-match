@@ -116,7 +116,7 @@ const Home: NextPage = () => {
       const storage = sessionStorage;
       const scroll = storage.getItem('scroll');
       if (scroll) {
-        // window.scroll({top: parseInt(scroll), behavior: "smooth"});
+        window.scroll({top: parseInt(scroll), behavior: "smooth"});
       }
     }, 150);
 

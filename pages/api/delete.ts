@@ -24,7 +24,7 @@ export default async function handler(
   initFirebaseAdminApp();
 
   try {
-    const idToken = await getAuth().verifySessionCookie(req.cookies.session);
+    const idToken = await getAuth().verifySessionCookie(req.cookies.session, true);
     await getAuth().revokeRefreshTokens(idToken.sub);
     await getAuth().deleteUser(idToken.sub);
     res.setHeader(

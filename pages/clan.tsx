@@ -68,7 +68,7 @@ const Clan: NextPage = () => {
             ))
           }
         </div>
-        <p>{ state.description }</p>
+        <p style={{whiteSpace: "pre-wrap"}}>{ state.description }</p>
         { state.twitter !== "" && <p>Twitter: <a href={"https://twitter.com/" + state.twitter}>@{ state.twitter }</a></p> }
         { editable && <button className="btn btn-primary" onClick={() => router.push("/register")}>編集</button> }
         <Modal show={expanded} fullscreen={true} onHide={() => setExpanded(false)}>

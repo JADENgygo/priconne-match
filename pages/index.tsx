@@ -11,12 +11,20 @@ import { order, tags } from "../lib/tag";
 import { store, setClans } from "../lib/redux";
 import { useDispatch } from 'react-redux';
 import { useSelector } from 'react-redux';
+import { GetServerSideProps } from "next";
+import { signOut, getAuth } from "firebase/auth";
 import { Modal } from 'react-bootstrap';
+import { initFirebaseAdminApp } from "../lib/firebase-admin";
+import nookies from "nookies";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
-const Home: NextPage = () => {
+type Props = {
+  noSession: boolean;
+};
+
+const Home: NextPage<Props> = (props: Props) => {
   const dispatch = useDispatch();
   const selector = useSelector((state: any) => state.clans);
   const router = useRouter();
@@ -96,18 +104,27 @@ const Home: NextPage = () => {
   }, [search]);
 
   useEffect(() => {
+    // ログイン中にユーザーがクッキーを削除した場合はログアウトする
+    const f = async () => {
+      if (props.noSession) {
+        const auth = getAuth();
+        await signOut(auth);
+      }
+    };
+    f();
+
     if (selector.list.length === 0) {
       search();
     }
     else {
       setState({last: selector.last, list: selector.list});
     }
-    const f = () => {
+    const scroll = () => {
       if (document.documentElement.scrollHeight <= document.documentElement.clientHeight + document.documentElement.scrollTop) {
         callbackRef.current();
       }
     };
-    window.addEventListener('scroll', f);
+    window.addEventListener('scroll', scroll);
 
     setTimeout(() => {
       const storage = sessionStorage;
@@ -117,7 +134,7 @@ const Home: NextPage = () => {
       }
     }, 150);
 
-    return () => window.removeEventListener("scroll", f);
+    return () => window.removeEventListener("scroll", scroll);
   }, []);
 
   if (router.query.page && isNaN(parseInt(router.query.page as string))) {
@@ -218,5 +235,17 @@ const Home: NextPage = () => {
     </div>
   )
 }
+
+export const getServerSideProps: GetServerSideProps = async (context) => {
+  const cookie = nookies.get(context);
+  const session = cookie.session;
+  if (!session) {
+    return { props: { noSession: true } };
+  }
+
+  initFirebaseAdminApp();
+
+  return { props: { noSession: false } };
+};
 
 export default Home

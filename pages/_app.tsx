@@ -3,7 +3,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import type { AppProps } from 'next/app'
 import Head from "next/head"
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/router";
 import { initializeApp } from "firebase/app";
 import {
@@ -21,8 +21,14 @@ import { store, setClans } from "../lib/redux";
 function MyApp({ Component, pageProps }: AppProps) {
   const [loaded, setLoaded] = useState(false);
   const router = useRouter();
+  const ref = useRef(false);
 
   useEffect(() => {
+    if (ref.current) {
+      return;
+    }
+    ref.current = true;
+
     const firebaseConfig = {
       apiKey: process.env.NEXT_PUBLIC_API_KEY,
       authDomain: process.env.NEXT_PUBLIC_AUTH_DOMAIN,

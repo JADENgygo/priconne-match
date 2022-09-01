@@ -1,5 +1,5 @@
 import type { NextPage } from "next";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import dayjs from "dayjs";
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
@@ -56,7 +56,13 @@ const Register: NextPage = () => {
   });
   const router = useRouter();
 
+  const once = useRef(false);
   useEffect(() => {
+    if (once.current) {
+      return;
+    }
+    once.current = true;
+
     const f = async () => {
       const auth = getAuth();
       if (!auth.currentUser) {

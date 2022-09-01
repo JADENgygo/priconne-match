@@ -103,6 +103,8 @@ const Home: NextPage<Props> = (props: Props) => {
     callbackRef.current = search;
   }, [search]);
 
+  const ref = useRef(false);
+
   useEffect(() => {
     // ログイン中にユーザーがクッキーを削除した場合はログアウトする
     const f = async () => {
@@ -114,7 +116,10 @@ const Home: NextPage<Props> = (props: Props) => {
     f();
 
     if (selector.list.length === 0) {
-      search();
+      if (!ref.current) {
+        search();
+      }
+      ref.current = true;
     }
     else {
       setState({last: selector.last, list: selector.list});

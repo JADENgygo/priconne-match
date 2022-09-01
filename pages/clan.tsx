@@ -1,7 +1,7 @@
 import type { NextPage } from "next";
 import { Loader } from "../components/loader";
 import { useRouter } from "next/router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getApp } from 'firebase/app';
 import { getAuth } from "firebase/auth";
 import { collection, getFirestore, doc, setDoc, deleteDoc, getDoc, getDocs, query, orderBy, limit, startAfter, DocumentData, QueryDocumentSnapshot } from "firebase/firestore";
@@ -15,7 +15,13 @@ const Clan: NextPage = () => {
   const [expanded, setExpanded] = useState(false);
   const [url, setUrl] = useState("");
 
+  const ref = useRef(false);
   useEffect(() => {
+    if (ref.current) {
+      return;
+    }
+    ref.current = true;
+
     const f = async () => {
       const app = getApp();
       const db = getFirestore(app);

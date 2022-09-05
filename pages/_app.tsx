@@ -6,13 +6,8 @@ import Head from "next/head"
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/router";
 import { initializeApp } from "firebase/app";
-import {
-  connectAuthEmulator,
-  User,
-  onAuthStateChanged,
-  getAuth,
-  getRedirectResult,
-} from "firebase/auth";
+import { User, onAuthStateChanged, getAuth, getRedirectResult } from "firebase/auth";
+import { getAnalytics } from "firebase/analytics";
 import { Header } from "../components/header";
 import { Loader } from "../components/loader";
 import { Provider } from 'react-redux';
@@ -39,7 +34,8 @@ function MyApp({ Component, pageProps }: AppProps) {
       measurementId: process.env.NEXT_PUBLIC_MEASUREMENT_ID,
       databaseURL: process.env.NEXT_PUBLIC_DATABASE_URL,
     };
-    initializeApp(firebaseConfig);
+    const app = initializeApp(firebaseConfig);
+    getAnalytics(app);
 
     const auth = getAuth();
     const unsubscribe = onAuthStateChanged(auth, async (user: User | null) => {

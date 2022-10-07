@@ -8,8 +8,10 @@ import { getAuth as getAdminAuth } from "firebase-admin/auth";
 import nookies from "nookies";
 import { initFirebaseAdminApp } from "../lib/firebase-admin";
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
+import { Loader } from "../components/loader";
 
 const Delete: NextPage = () => {
+  const [loaded, setLoaded] = useState(true);
   const [disabled, setDisabled] = useState(true);
   const router = useRouter();
 
@@ -22,6 +24,7 @@ const Delete: NextPage = () => {
     if (!auth.currentUser) {
       return;
     }
+    setLoaded(false);
     const db = getFirestore();
     const docRef = doc(db, "clans", auth.currentUser.uid);
     await deleteDoc(docRef);
@@ -45,6 +48,10 @@ const Delete: NextPage = () => {
     });
     router.reload();
   };
+
+  if (!loaded) {
+    return <Loader />;
+  }
 
   return (
     <div className="container mt-3">

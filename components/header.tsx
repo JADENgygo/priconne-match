@@ -3,8 +3,10 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { getAuth } from "firebase/auth";
+import { Loader } from "./loader";
 
 export const Header = () => {
+  const [loaded, setLoaded] = useState(true);
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const router = useRouter();
 
@@ -29,6 +31,7 @@ export const Header = () => {
   };
 
   const logOut = async () => {
+    setLoaded(false);
     await fetch("/api/signout", {
       method: "POST",
       headers: {
@@ -37,6 +40,10 @@ export const Header = () => {
     });
     router.reload();
   };
+
+  if (!loaded) {
+    return <Loader />;
+  }
 
   return (
     <Navbar

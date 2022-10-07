@@ -59,7 +59,6 @@ const Home: NextPage<Props> = (props: Props) => {
     console.info('search');
     const app = getApp();
     const db = getFirestore(app);
-    console.log("db", db)
     const col = collection(db, "clans");
     let q;
     const size = 5;

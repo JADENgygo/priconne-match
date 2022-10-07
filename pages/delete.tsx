@@ -58,7 +58,7 @@ const Delete: NextPage = () => {
         />
         <button
           type="button"
-          className="mt-3 btn btn-outline-danger"
+          className="mt-3 btn btn-danger keep"
           disabled={disabled}
           onClick={deleteAccount}
           id="deleteButton"

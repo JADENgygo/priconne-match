@@ -59,6 +59,7 @@ const Home: NextPage<Props> = (props: Props) => {
     console.info('search');
     const app = getApp();
     const db = getFirestore(app);
+    console.log("db", db)
     const col = collection(db, "clans");
     let q;
     const size = 5;
@@ -170,8 +171,8 @@ const Home: NextPage<Props> = (props: Props) => {
           ))
         }
       </div>
-      <button type="button" className="btn btn-primary mt-3 me-3" onClick={() => search("filter")}>絞り込み</button>
-      <button type="button" className="btn btn-primary mt-3" onClick={() => search("release")}>解除</button>
+      <button type="button" className="btn btn-outline-dark mt-3 me-3" onClick={() => search("filter")}>絞り込み</button>
+      <button type="button" className="btn btn-outline-dark mt-3" onClick={() => search("release")}>解除</button>
       <div className="row gy-3 mt-3">
         {
           state.list.map(e => (

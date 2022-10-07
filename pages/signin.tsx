@@ -16,24 +16,20 @@ const Signin: NextPage = () => {
 
   return (
     <div className="container mt-3">
-      <div className="row">
-        <div className="col-lg-4"></div>
-        <div className="col-lg-4 col-12">
-          <button
-            type="button"
-            className="btn btn-outline-dark mt-3 text-center signin-button"
-            onClick={loginByTwitter}
-            id="twitterLogin"
-          >
-            <i className="bi bi-twitter link twitter-icon"></i>
-            <span className="ms-1 align-text-bottom">
-              &nbsp;Twitterで新規登録/ログイン
-            </span>
-          </button>
-        </div>
-        <div className="col-lg-4"></div>
+      <div className="text-center">
+        <button
+          type="button"
+          className="btn btn-outline-dark mt-3"
+          onClick={loginByTwitter}
+          id="twitterLogin"
+        >
+          <i className="bi bi-twitter link twitter-icon"></i>
+          <span className="ms-1 align-text-bottom">
+            &nbsp;Twitterで新規登録/ログイン
+          </span>
+        </button>
       </div>
-      <Accordion className="mt-3">
+      <Accordion className="mt-5">
         <Accordion.Item eventKey="0">
           <Accordion.Header>新規登録/ログインできない場合</Accordion.Header>
           <Accordion.Body>

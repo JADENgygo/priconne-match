@@ -1,0 +1,47 @@
+.content {
+  position: relative;
+  min-height: 100vh;
+  padding: 0 0 150px 0;
+}
+
+footer {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+}
+
+.link {
+  text-decoration: none;
+}
+
+.link:hover {
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.title {
+  text-decoration: none;
+}
+
+.twitter-icon {
+  font-size: 1.5rem;
+}
+
+@import "../node_modules/bootstrap/scss/functions";
+@import "../node_modules/bootstrap/scss/variables";
+
+a, a:hover {
+  color: $dark;
+}
+
+.dark {
+  filter: invert(1) hue-rotate(180deg);
+
+  body {
+    background-color: $gray-300;
+  }
+
+  img, canvas, .keep {
+    filter: invert(1) hue-rotate(180deg);
+  }
+}

@@ -264,12 +264,12 @@ const Register: NextPage = () => {
               <div className="mb-3">{ i + 1 }枚目</div>
               <img src={e.src} className="img-fluid mb-3" />
               <div>
-                <label className="btn btn-outline-dark mb-3">
+                <label className="btn btn-primary mb-3">
                   画像の選択
                   <input accept=".jpg,.jpeg" id={"image" + i} style={{display: "none"}} className="mb-3" type="file" onChange={(event) => selectImage(event, i)} />
                 </label>
               </div>
-              <button type="button" className="btn btn-outline-dark" onClick={() => removeImage(i)}>選択の解除</button>
+              <button type="button" className="btn btn-danger" onClick={() => removeImage(i)}>選択の解除</button>
             </div>
           ))
         }
@@ -287,18 +287,18 @@ const Register: NextPage = () => {
         </div>
         <div className="row mt-3">
           <div className="col-6">
-            <button type="submit" className="btn btn-outline-dark">登録</button>
+            <button type="submit" className="btn btn-primary">登録</button>
           </div>
           <div className="col-6 text-end">
             {
               deletable && (
                 confirmed ? (
                   <>
-                    <button type="button" className="btn btn-outline-dark text-right me-3" onClick={() => setConfirmed(false)}>取消</button>
-                    <button type="button" className="btn btn-outline-danger text-right" onClick={deleteClan}>削除</button>
+                    <button type="button" className="btn btn-primary text-right me-3" onClick={() => setConfirmed(false)}>取消</button>
+                    <button type="button" className="btn btn-danger text-right" onClick={deleteClan}>削除</button>
                   </>
                 ) : (
-                  <button type="button" className="btn btn-outline-danger text-right" onClick={() => setConfirmed(true)}>削除確認</button>
+                  <button type="button" className="btn btn-danger text-right" onClick={() => setConfirmed(true)}>削除確認</button>
                 )
               )
             }

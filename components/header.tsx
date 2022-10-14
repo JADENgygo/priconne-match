@@ -4,10 +4,11 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import { getAuth } from "firebase/auth";
 import { Loader } from "./loader";
+import { parseCookies, setCookie } from "nookies";
 
 export const Header = () => {
   const [loaded, setLoaded] = useState(true);
-  const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [theme, setTheme] = useState<"" | "light" | "dark">("");
   const router = useRouter();
 
   const auth = getAuth();
@@ -18,16 +19,17 @@ export const Header = () => {
   });
 
   useEffect(() => {
-    const theme = localStorage.getItem("theme");
-    setTheme(theme === "dark" ? "dark" : "light");
+    const cookie = parseCookies();
+    setTheme(cookie.theme === "dark" ? "dark" : "light");
   }, [])
 
   const changeTheme = () => {
-    document.querySelector('html')?.classList.toggle('dark');
-    const theme = localStorage.getItem('theme');
-    localStorage.setItem("theme", theme === "dark" ? "light" : "dark");
-    setTheme(theme === "dark" ? "light" : "dark");
-    window.dispatchEvent(new Event("storage"));
+    const cookie = parseCookies();
+    setCookie(null, "theme", cookie.theme === "dark" ? "light" : "dark", {
+      maxAge: 60 * 60 * 24 * 30 * 12 * 1,
+      path: "/"
+    });
+    router.reload();
   };
 
   const logOut = async () => {
@@ -50,6 +52,7 @@ export const Header = () => {
       collapseOnSelect
       expand="md"
       className="pt-3 pb-3"
+      variant={theme}
     >
       <Container>
         <Navbar.Brand className="fs-3">

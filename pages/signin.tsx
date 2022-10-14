@@ -19,7 +19,7 @@ const Signin: NextPage = () => {
       <div className="text-center">
         <button
           type="button"
-          className="btn btn-outline-dark mt-3"
+          className="btn btn-primary mt-3"
           onClick={loginByTwitter}
           id="twitterLogin"
         >

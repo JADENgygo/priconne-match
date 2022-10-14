@@ -7,6 +7,7 @@ import { getAuth } from "firebase/auth";
 import { collection, getFirestore, doc, setDoc, deleteDoc, getDoc, getDocs, query, orderBy, limit, startAfter, DocumentData, QueryDocumentSnapshot } from "firebase/firestore";
 import { order, tags } from "../lib/tag";
 import { Modal } from 'react-bootstrap';
+import { GetServerSideProps } from "next";
 
 const Clan: NextPage = () => {
   const [editable, setEditable] = useState(false);
@@ -76,7 +77,7 @@ const Clan: NextPage = () => {
         </div>
         <p style={{whiteSpace: "pre-wrap"}}>{ state.description }</p>
         { state.twitter !== "" && <p>Twitter: <a href={"https://twitter.com/" + state.twitter} className="link">@{ state.twitter }</a></p> }
-        { editable && <button className="btn btn-outline-dark" onClick={() => router.push("/register")}>編集</button> }
+        { editable && <button className="btn btn-primary" onClick={() => router.push("/register")}>編集</button> }
         <Modal show={expanded} fullscreen={true} onHide={() => setExpanded(false)}>
           <Modal.Header closeButton onClick={() => setExpanded(false)}></Modal.Header>
           <Modal.Body className="m-0 p-0">
@@ -97,3 +98,7 @@ const Clan: NextPage = () => {
 };
 
 export default Clan;
+
+export const getServerSideProps: GetServerSideProps = async (context) => {
+  return { props: {}};
+}
